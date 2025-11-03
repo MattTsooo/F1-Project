@@ -6,6 +6,10 @@ from sklearn.ensemble import RandomForestRegressor
 import matplotlib.pyplot as plt
 
 def get_race_data():
+    '''
+    Retrieve past race lap time data along with 
+    tire compound used and its longevity
+    '''
     session = f1.get_session(2023, 'Monza', 'R')
     session.load()
     laps = session.laps
@@ -15,6 +19,9 @@ def get_race_data():
     return laps
 
 def combine_data():
+    '''
+    Merging weather data with lap times based off timestamps
+    '''
     weather = data.process_database()
     weather = weather.dropna(subset=['timestamp', 'temp_c'])
     weather['Time'] = (weather['timestamp'] - weather['timestamp'].iloc[0]).dt.total_seconds()
@@ -31,9 +38,13 @@ def combine_data():
     return merged_data
 
 def visualize_data():
+    intial_fuel = 100
+    fuel_per_lap = 2.5
     merged_data = combine_data()
+    merged_data = merged_data.sort_values('Time')
+    merged_data['fuel_kg'] = intial_fuel - fuel_per_lap * merged_data.groupby('Driver').cumcount()
     feature_cols = ['temp_c', 'wind_kph', 'humidity', 'precip_mm',
-                    'vis_km', 'cloud', 'gust_kph']
+                    'vis_km', 'cloud', 'gust_kph', 'fuel_kg']
     
     merged_data = merged_data.dropna(subset=feature_cols + ['LapTime'])
 

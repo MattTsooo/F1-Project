@@ -1,3 +1,4 @@
+from typing import Dict
 import requests
 import sqlite3
 import pandas as pd
@@ -5,7 +6,11 @@ from sklearn.preprocessing import StandardScaler
 from datetime import datetime
 
 
-def get_weather():
+def get_weather() -> Dict:
+    '''
+    Fetches data from weatherapi.com to get current time
+    weather data as a json
+    '''
     url = "http://api.weatherapi.com/v1/current.json"
     params = {"key": "b6b414bda24544b3ac5184659250111", 
             "q": "Monaco"
@@ -15,6 +20,10 @@ def get_weather():
     return data
 
 def process_database():
+    '''
+    Filters weather data to include only relevant information
+    Create a database table 
+    '''
     data = get_weather()
     current = data["current"]
     weather_queries = {"temp_c": current["temp_c"], "wind_kph": current["wind_kph"],
@@ -34,7 +43,7 @@ def process_database():
     dataframe[numeric_cols] = scaler.fit_transform(dataframe[numeric_cols])
     return dataframe
 
-def write_to_csv():
+def write_to_csv() -> None:
     dataframe = process_database()
     dataframe['timestamp'] = datetime.now().isoformat()
 
