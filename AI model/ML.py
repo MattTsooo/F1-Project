@@ -1,9 +1,10 @@
 import fastf1 as f1
 import pandas as pd
-import data
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 import matplotlib.pyplot as plt
+import data
+import race_sim
 
 def get_race_data():
     '''
@@ -37,12 +38,11 @@ def combine_data():
     print(merged_data.head())
     return merged_data
 
-def visualize_data():
-    intial_fuel = 100
+def model_train(merged_data):
+    initial_fuel = 100
     fuel_per_lap = 2.5
-    merged_data = combine_data()
     merged_data = merged_data.sort_values('Time')
-    merged_data['fuel_kg'] = intial_fuel - fuel_per_lap * merged_data.groupby('Driver').cumcount()
+    merged_data['fuel_kg'] = initial_fuel - fuel_per_lap * merged_data.groupby('Driver').cumcount()
     feature_cols = ['temp_c', 'wind_kph', 'humidity', 'precip_mm',
                     'vis_km', 'cloud', 'gust_kph', 'fuel_kg']
     
@@ -58,16 +58,22 @@ def visualize_data():
 
     print(f"Model R^2 score: {model.score(X_test, y_test):.2f}")
     
-    plt.scatter(merged_data['temp_c'], y)
-    plt.xlabel('Temperature (°C)')
-    plt.ylabel('Lap Time (s)')
-    plt.title('Temperature vs Lap Time')
-    plt.show()
+    return model, merged_data, feature_cols
 
 
 def main():
-    combine_data()
-    visualize_data()
+    merged_data = combine_data()
+    model, merged_data, feature_cols = model_train(merged_data)
+
+    total_time, lap_times = race_sim.simulate_race(model, merged_data, feature_cols)
+    print(f"Predicted total race time: {total_time: .3f} seconds")
+
+    plt.plot(range(1, len(lap_times) + 1), lap_times)
+    plt.xlabel("Lap")
+    plt.ylabel("Lap Time (s)")
+    plt.title("Simulated Lap Times")
+    plt.show()
+
 
 if __name__ == '__main__':
     main()
