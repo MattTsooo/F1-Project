@@ -23,7 +23,8 @@ def combine_data():
     '''
     Merging weather data with lap times based off timestamps
     '''
-    weather = data.process_database()
+    weather = data.preprocess_database()
+    weather['timestamp'] = pd.to_datetime(weather['timestamp'])
     weather = weather.dropna(subset=['timestamp', 'temp_c'])
     weather['Time'] = (weather['timestamp'] - weather['timestamp'].iloc[0]).dt.total_seconds()
     laps = get_race_data()
@@ -35,7 +36,7 @@ def combine_data():
         direction='nearest')
     
     merged_data = merged_data.dropna(subset=['LapTime', 'temp_c'])
-    print(merged_data.head())
+    print("-----MERGED DATA ----------", merged_data[['LapTime', 'temp_c', 'humidity']].head())
     return merged_data
 
 def model_train(merged_data):

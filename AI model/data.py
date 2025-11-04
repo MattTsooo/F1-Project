@@ -3,59 +3,75 @@ import requests
 import sqlite3
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
-from datetime import datetime
+import datetime as dt
 
+API_KEY = "b6b414bda24544b3ac5184659250111"
+DB_FILE = "weather.db"
 
-def get_weather() -> Dict:
+def fetch_forecast(location: str) -> pd.DataFrame:
     '''
-    Fetches data from weatherapi.com to get current time
-    weather data as a json
+    Fetches data from weatherapi.com to get the forecast
+    weather data for the next 3 days as a json
     '''
-    url = "http://api.weatherapi.com/v1/current.json"
-    params = {"key": "b6b414bda24544b3ac5184659250111", 
-            "q": "Monaco"
+    url = "http://api.weatherapi.com/v1/forecast.json"
+    today = dt.date.today()
+    params = {"key": API_KEY, 
+            "q": location,
+            "days": 3,
+            "dt": today.isoformat()
             }
-    response = requests.get(url, params = params)
-    data = response.json()
-    return data
+    response = requests.get(url, params = params).json()
+    print("------------RESPONSE---------", response)
 
-def process_database():
+    hourly_data = []
+    for hour_data in response["forecast"]["forecastday"][0]["hour"]:
+        timestamp = dt.datetime.strptime(hour_data["time"], "%Y-%m-%d %H:%M")
+        hourly_data.append({
+            "location": location,
+            "timestamp": timestamp,
+            "temp_c": hour_data["temp_c"],
+            "wind_kph": hour_data["wind_kph"],
+            "wind_dir": hour_data["wind_dir"],
+            "humidity": hour_data["humidity"],
+            "precip_mm": hour_data["precip_mm"],
+            "condition": hour_data["condition"]["text"],
+            "vis_km": hour_data["vis_km"],
+            "cloud": hour_data["cloud"],
+            "gust_kph": hour_data["gust_kph"]
+        })
+
+    return pd.DataFrame(hourly_data)
+
+def preprocess_database() -> pd.DataFrame:
     '''
-    Filters weather data to include only relevant information
-    Create a database table 
+    One-hot encodes data for ML and sends data to SQL database
     '''
-    data = get_weather()
-    current = data["current"]
-    weather_queries = {"temp_c": current["temp_c"], "wind_kph": current["wind_kph"],
-                    "wind_dir": current["wind_dir"], "humidity": current["humidity"], 
-                    "precip_mm": current["precip_mm"], "condition": current["condition"]["text"],
-                    "vis_km": current["vis_km"], "cloud": current["cloud"], 
-                    "gust_kph": current["gust_kph"], "timestamp": datetime.now()}
-    
-    dataframe = pd.DataFrame([weather_queries])
-    conn = sqlite3.connect("weather.db")
-    dataframe.to_sql("weather_data", conn, if_exists='append', index = False)
+    conn = sqlite3.connect(DB_FILE)
+    dataframe = pd.read_sql("SELECT * FROM weather_forecast", conn)
     conn.close()
 
-    dataframe = pd.get_dummies(dataframe, columns=["condition", "wind_dir"], prefix=["condition", "wind"])
+    dataframe = pd.get_dummies(dataframe, columns=["condition", "wind_dir", "location"], prefix=["condition", "wind", "location"])
+
     scaler = StandardScaler()
     numeric_cols = ["temp_c", "wind_kph", "humidity", "precip_mm", "vis_km", "cloud", "gust_kph"]
     dataframe[numeric_cols] = scaler.fit_transform(dataframe[numeric_cols])
+    
     return dataframe
 
-def write_to_csv() -> None:
-    dataframe = process_database()
-    dataframe['timestamp'] = datetime.now().isoformat()
-
-    try:
-        dataframe.to_csv('weather_data.csv', mode='a', index=False, header=False)
-    except FileNotFoundError:
-        dataframe.to_csv('weather_data.csv', mode='w', index=False, header=True)
+def log_to_database(dataframe: pd.DataFrame):
+    '''
+    writes weather data into database
+    '''
+    conn = sqlite3.connect(DB_FILE)
+    dataframe.to_sql("weather_forecast", conn, if_exists="append", index=False)
+    conn.close()
 
 
 def main():
-    dataframe = process_database()
-    print(dataframe.head())
+    locations = ["Monaco", "Silverstone", "Monza", "Spa", "Suzuka"]
+    for loc in locations:
+        dataframe = fetch_forecast(loc)
+        log_to_database(dataframe)
 
 if __name__ == "__main__":
     main()
