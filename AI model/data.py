@@ -6,7 +6,7 @@ from sklearn.preprocessing import StandardScaler
 import datetime as dt
 
 API_KEY = "b6b414bda24544b3ac5184659250111"
-DB_FILE = "weather.db"
+DB_FILE = "/Users/matthewtso/F1 Project/AI model/weather.db"
 
 def fetch_forecast(location: str) -> pd.DataFrame:
     '''
@@ -21,14 +21,16 @@ def fetch_forecast(location: str) -> pd.DataFrame:
             "dt": today.isoformat()
             }
     response = requests.get(url, params = params).json()
-    print("------------RESPONSE---------", response)
 
     hourly_data = []
+    retrieval_time = dt.datetime.now()
+    
     for hour_data in response["forecast"]["forecastday"][0]["hour"]:
         timestamp = dt.datetime.strptime(hour_data["time"], "%Y-%m-%d %H:%M")
         hourly_data.append({
             "location": location,
             "timestamp": timestamp,
+            "retrieval_time": retrieval_time,
             "temp_c": hour_data["temp_c"],
             "wind_kph": hour_data["wind_kph"],
             "wind_dir": hour_data["wind_dir"],
@@ -72,6 +74,7 @@ def main():
     for loc in locations:
         dataframe = fetch_forecast(loc)
         log_to_database(dataframe)
+    print("Crontab at", dt.datetime.now())
 
 if __name__ == "__main__":
     main()
