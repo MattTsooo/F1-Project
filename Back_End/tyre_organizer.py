@@ -77,11 +77,11 @@ class SessionPlan:
     """
     Plan for a single given session
     """
-    session_type = SessionType
+    session_type: SessionType
     tire_sets_used: List[int]
-    compounds_used = List[TireCompound]
+    compounds_used: List[TireCompound]
     target_laps: int
-    objective: List[str] #["long_run_data, "quali_sim", "setup_test"]
+    objectives: List[str] #["long_run_data, "quali_sim", "setup_test"]
 
 @dataclass
 class WeekendStrategy:
@@ -98,10 +98,10 @@ class WeekendSim:
     Simulated entire F1 weekend and optimizes
     """
 
-    def __init__(self, track: str) -> None:
+    def __init__(self, track: str, format: WeekendType, weather_forecast: Dict) -> None:
         self.track = track
-        #self.format = format format: WeekendType, weather_forecast: Dict
-        #self.weather_forecast = weather_forecast
+        self.format = format
+        self.weather_forecast = weather_forecast
         self.tire_allocation = TireAllocation()
         self.tire_inventory = self._initialize_tire_inventory()
 
@@ -125,9 +125,49 @@ class WeekendSim:
 
         return inventory
 
-def main():
-    tire = WeekendSim("Monza")
-    print(tire.tire_inventory)
+    def plan_practice_sessions(self) -> Dict[SessionType, SessionPlan]:
+        """
+        Plan FP1, FP2, FP3 with objectives:
+        - Initial Setup (FP1)
+        - Long run data collection (FP2)
+        - Quali simulation + final setup (FP3)
+        """
 
-if __name__ == "__main__":
-    main()
+        plans = {}
+
+        if self.format == WeekendType.STANDARD:
+            #FP1
+            plans[SessionType.FP1] = SessionPlan(
+                session_type = SessionType.FP1,
+                tire_sets_used = [11,12], #HARD x2
+                compounds_used = [TireCompound.HARD, TireCompound.HARD],
+                target_laps = 25,
+                objectives = ["aero_balance", "mechanical_setup", "baseline_times"]
+            )
+
+            plans[SessionType.FP1] = SessionPlan(
+                session_type=SessionType.FP2,
+                tire_sets_used=[9, 10, 4],  #MEDIUM x2, SOFT x1
+                compounds_used=[TireCompound.MEDIUM, TireCompound.MEDIUM, TireCompound.SOFT],
+                target_laps=35,
+                objectives=["race_pace", "tire_deg_data", "fuel_load_testing"]
+            )
+
+            plans[SessionType.FP3] = SessionPlan(
+                session_type=SessionType.FP3,
+                tire_sets_used=[1, 2],  #SOFT x2
+                compounds_used=[TireCompound.SOFT, TireCompound.SOFT],
+                target_laps=20,
+                objectives=["quali_sim", "final_setup", "low_fuel_pace"]
+            )
+
+        elif self.format == WeekendType.SPRINT:
+            plans[SessionType.FP1] = SessionPlan(
+                session_type=SessionType.FP1,
+                tire_sets_used=[11, 12, 3, 4],  #HARD x2, SOFT x2
+                compounds_used=[TireCompound.HARD, TireCompound.HARD, TireCompound.SOFT, TireCompound.SOFT],
+                target_laps=30,
+                objectives=["full_setup", "quali_prep", "sprint_race_sim"]
+            )
+
+        return plans
