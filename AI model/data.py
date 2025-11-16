@@ -4,9 +4,7 @@ import sqlite3
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 import datetime as dt
-
-API_KEY = "b6b414bda24544b3ac5184659250111"
-DB_FILE = "/Users/matthewtso/F1 Project/AI model/weather.db"
+import api_key as key
 
 def fetch_forecast(location: str) -> pd.DataFrame:
     '''
@@ -15,7 +13,7 @@ def fetch_forecast(location: str) -> pd.DataFrame:
     '''
     url = "http://api.weatherapi.com/v1/forecast.json"
     today = dt.date.today()
-    params = {"key": API_KEY, 
+    params = {"key": key.API_KEY,
             "q": location,
             "days": 3,
             "dt": today.isoformat()
@@ -48,7 +46,7 @@ def preprocess_database() -> pd.DataFrame:
     '''
     One-hot encodes data for ML and sends data to SQL database
     '''
-    conn = sqlite3.connect(DB_FILE)
+    conn = sqlite3.connect(key.DB_FILE)
     dataframe = pd.read_sql("SELECT * FROM weather_forecast", conn)
     conn.close()
 
@@ -64,7 +62,7 @@ def log_to_database(dataframe: pd.DataFrame):
     '''
     writes weather data into database
     '''
-    conn = sqlite3.connect(DB_FILE)
+    conn = sqlite3.connect(key.DB_FILE)
     dataframe.to_sql("weather_forecast", conn, if_exists="append", index=False)
     conn.close()
 
