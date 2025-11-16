@@ -1,4 +1,3 @@
-from typing import Dict
 import requests
 import sqlite3
 import pandas as pd

@@ -26,6 +26,3 @@ def simulate_race(model, merged_data, feature_cols, total_laps = 53, initial_fue
 
     total_race_time = sum(lap_times)
     return total_race_time, lap_times
-
-
-        
