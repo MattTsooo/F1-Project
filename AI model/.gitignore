@@ -1,0 +1,6 @@
+weather.db
+cron.log
+api_key.py
+__pycache__/
+*.pyc
+.env
