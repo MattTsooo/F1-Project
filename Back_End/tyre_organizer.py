@@ -171,3 +171,47 @@ class WeekendSim:
             )
 
         return plans
+
+    def plan_qualifying(self, session: SessionType):
+        """
+        Plan (Sprint) Qualifying tire usage
+        Q1: 7 min, Q2: 10 min, Q3: 12 min
+        """
+
+        if session == SessionType.QUALIFYING:
+            return SessionPlan(
+                session_type=SessionType.QUALIFYING,
+                tire_sets_used=[5, 6, 7, 8],  #SOFT x4
+                compounds_used=[TireCompound.SOFT] * 4,
+                target_laps=12,
+                objectives=[
+                    "Q1: 1 set for safety (Set 5)",
+                    "Q2: 1-2 sets to reach Q3 (Sets 6, 7)",
+                    "Q3: Best available sets (Set 8)"
+                ]
+            )
+        else:
+            return SessionPlan(
+                session_type=SessionType.SPRINT_QUALIFYING,
+                tire_sets_used=[1, 2, 5],  #SOFT x3
+                compounds_used=[TireCompound.SOFT] * 3,
+                target_laps=9,
+                objectives=[
+                    "SQ1: 1 set",
+                    "SQ2: 1 set",
+                    "SQ3: 1 fresh set"
+                ]
+            )
+
+    def plan_sprint_race(self):
+        """
+        PLan sprint race
+        Starting tire used is whatever tire that was used for qualifying (must use for 2 laps)
+        """
+        return SessionPlan(
+            session_type=SessionType.SPRINT,
+            tire_sets_used=[2],
+            compounds_used=[TireCompound.SOFT],
+            target_laps=17,
+            objectives=["score_points", "gather_race_data", "minimize_risk"]
+        )
