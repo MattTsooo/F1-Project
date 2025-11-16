@@ -6,5 +6,6 @@ __pycache__/
 *.pyc
 .env
 .idea/
+api_key.py
 
 
