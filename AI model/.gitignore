@@ -1,6 +1,6 @@
 weather.db
 cron.log
-api_key.py
+../Back_End/api_key.py
 __pycache__/
 *.pyc
 ai_env/
